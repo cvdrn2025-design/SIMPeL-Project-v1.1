@@ -3345,6 +3345,10 @@ initApp();
         <input type="password" id="loginPassword" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
       </div>
       <button type="submit" style="width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Masuk</button>
+          <button type="button" onclick="testLoginDarurat()" style="width: 100%; margin-top: 10px; background: #ff4d4d; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold;">
+        Tes Login Darurat
+    >Button</button>
+
     </form>
     <p id="loginError" style="color: red; font-size: 12px; margin-top: 10px; text-align: center;"></p>
   </div>
@@ -3366,6 +3370,14 @@ initApp();
     messagingSenderId: "53237739019",
     appId: "1:53237739019:web:3c579dee2eacf33c39210e"
   };
+window.testLoginDarurat = async function() {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, "cv.drn2025@gmail.com", "MASUKKAN_PASSWORD_BARU");
+    alert("BERHASIL LOGIN! UID: " + userCredential.user.uid);
+  } catch (error) {
+    alert("GAGAL LOGIN: " + error.code + " - " + error.message);
+  }
+};
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
