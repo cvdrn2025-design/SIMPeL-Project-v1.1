@@ -3331,14 +3331,32 @@ initApp();
   loadUserData();
   loadProjects();
 </script>
+<!-- Bagian Tampilan (UI) Form Login Sederhana -->
+<div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 8px; width: 350px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+    <h3 style="margin-bottom: 20px; text-align: center; color: #1e293b;">Login SIMPel DRN</h3>
+    <form id="loginForm">
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-size: 14px;">Email</label>
+        <input type="email" id="loginEmail" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-size: 14px;">Password</label>
+        <input type="password" id="loginPassword" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+      </div>
+      <button type="submit" style="width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Masuk</button>
+    </form>
+    <p id="loginError" style="color: red; font-size: 12px; margin-top: 10px; text-align: center;"></p>
+  </div>
+</div>
 
-<!-- Script Integrasi Firebase SIMPel -->
+<!-- Logika Firebase Authentication & Pembatasan Akses -->
 <script type="module">
-  // 1. Import fungsi SDK Firebase secara lengkap dan utuh
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-  import { getFirestore, collection, getDocs, getDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  import { getFirestore, getDoc, doc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // 2. Konfigurasi Firebase asli milik proyek SIMPel-Management Bapak
+  // Konfigurasi Firebase SIMPel-Management Bapak
   const firebaseConfig = {
     apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
     authDomain: "simpel-management.firebaseapp.com",
@@ -3349,41 +3367,73 @@ initApp();
     appId: "1:53237739019:web:3c579dee2eacf33c39210e"
   };
 
-  // 3. Inisialisasi Firebase & Firestore
   const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // 4. Fungsi untuk mengambil data pengguna (User)
-  async function loadUserData() {
-    try {
-      const userSnap = await getDoc(doc(db, "users", "DRN-USER-001"));
-      if (userSnap.exists()) {
-        console.log("Data User Firestore Berhasil Dimuat:", userSnap.data());
-      } else {
-        console.log("Data user tidak ditemukan di database!");
-      }
-    } catch (e) {
-      console.error("Error User Firestore:", e);
-    }
-  }
+  const loginOverlay = document.getElementById("loginOverlay");
+  const loginForm = document.getElementById("loginForm");
+  const loginError = document.getElementById("loginError");
 
-  // 5. Fungsi untuk mengambil data proyek berdasarkan pemilik
-  async function loadProjects() {
-    try {
-      const q = query(collection(db, "projects"), where("ownerId", "==", "DRN-USER-001"));
-      const querySnapshot = await getDocs(q);
+  // 1. Pantau status akun (Jika sudah login, sembunyikan kotak login dan muat data)
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // User sudah login, sembunyikan form login
+      loginOverlay.style.display = "none";
+      console.log("User aktif ID:", user.uid);
       
+      // Ambil data paket & kuota user dari Firestore
+      await loadUserDataAndProjects(user.uid);
+    } else {
+      // Belum login, tampilkan kotak login
+      loginOverlay.style.display = "flex";
+    }
+  });
+
+  // 2. Proses saat tombol Login ditekan
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    loginError.innerText = "";
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Berhasil login, onAuthStateChanged otomatis menutup form
+    } catch (error) {
+      console.error("Gagal login:", error.message);
+      loginError.innerText = "Email atau Password salah!";
+    }
+  });
+
+  // 3. Fungsi untuk memuat data profil & proyek berdasarkan user yang login
+  async function loadUserDataAndProjects(uid) {
+    try {
+      // Ambil data dari koleksi users berdasarkan UID akun Auth yang sedang login
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        console.log("Paket Langganan:", userData.plan); // basic / premium / promax
+        console.log("Batas Kuota Proyek:", userData.projectLimit);
+
+        // Contoh pembatasan fitur berdasarkan paket di sisi Frontend
+        if (userData.plan === 'basic') {
+          console.log("Akses dibatasi: Paket Basic (View-Only)");
+          // Sembunyikan tombol Create/Edit di UI jika perlu
+        }
+      }
+
+      // Ambil data proyek milik user ini
+      const q = query(collection(db, "projects"), where("ownerId", "==", uid));
+      const querySnapshot = await getDocs(q);
       querySnapshot.forEach((docSnap) => {
-        console.log("Proyek Firestore ID:", docSnap.id, docSnap.data());
+        console.log("Proyek Klien:", docSnap.id, docSnap.data());
       });
+
     } catch (e) {
-      console.error("Error Projects Firestore:", e);
+      console.error("Error memuat data:", e);
     }
   }
-
-  // 6. Eksekusi fungsi saat halaman dimuat
-  loadUserData();
-  loadProjects();
 </script>
 
 </body>
