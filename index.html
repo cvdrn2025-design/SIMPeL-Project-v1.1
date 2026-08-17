@@ -3252,14 +3252,53 @@ initApp();
   import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   // Isikan dengan kredensial dari Firebase Project Settings
+  <!-- Integrasi Firebase Firestore -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // Kredensial asli dari proyek Firebase Anda
   const firebaseConfig = {
-    apiKey: "ISI_API_KEY_ASLI_ANDA",
+    apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
     authDomain: "simpel-management.firebaseapp.com",
+    databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "simpel-management",
-    storageBucket: "simpel-management.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+    storageBucket: "simpel-management.firebasestorage.app",
+    messagingSenderId: "53237739019",
+    appId: "1:53237739019:web:3c579dee2eacf33c39210e"
   };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Mengambil data pengguna DRN-USER-001
+  async function loadUserData() {
+    try {
+      const userSnap = await getDoc(doc(db, "users", "DRN-USER-001"));
+      if (userSnap.exists()) {
+        console.log("Data User Firestore Berhasil Dimuat:", userSnap.data());
+      }
+    } catch (e) {
+      console.error("Error User Firestore:", e);
+    }
+  }
+
+  // Mengambil data proyek milik DRN-USER-001
+  async function loadProjects() {
+    try {
+      const q = query(collection(db, "projects"), where("ownerId", "==", "DRN-USER-001"));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((docSnap) => {
+        console.log("Proyek Firestore ID:", docSnap.id, docSnap.data());
+      });
+    } catch (e) {
+      console.error("Error Projects Firestore:", e);
+    }
+  }
+
+  loadUserData();
+  loadProjects();
+</script>
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
