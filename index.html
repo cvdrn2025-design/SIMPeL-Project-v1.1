@@ -3332,6 +3332,59 @@ initApp();
   loadProjects();
 </script>
 
+<!-- Script Integrasi Firebase SIMPel -->
+<script type="module">
+  // 1. Import fungsi SDK Firebase secara lengkap dan utuh
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, getDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+  // 2. Konfigurasi Firebase asli milik proyek SIMPel-Management Bapak
+  const firebaseConfig = {
+    apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
+    authDomain: "simpel-management.firebaseapp.com",
+    databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "simpel-management",
+    storageBucket: "simpel-management.firebasestorage.app",
+    messagingSenderId: "53237739019",
+    appId: "1:53237739019:web:3c579dee2eacf33c39210e"
+  };
+
+  // 3. Inisialisasi Firebase & Firestore
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // 4. Fungsi untuk mengambil data pengguna (User)
+  async function loadUserData() {
+    try {
+      const userSnap = await getDoc(doc(db, "users", "DRN-USER-001"));
+      if (userSnap.exists()) {
+        console.log("Data User Firestore Berhasil Dimuat:", userSnap.data());
+      } else {
+        console.log("Data user tidak ditemukan di database!");
+      }
+    } catch (e) {
+      console.error("Error User Firestore:", e);
+    }
+  }
+
+  // 5. Fungsi untuk mengambil data proyek berdasarkan pemilik
+  async function loadProjects() {
+    try {
+      const q = query(collection(db, "projects"), where("ownerId", "==", "DRN-USER-001"));
+      const querySnapshot = await getDocs(q);
+      
+      querySnapshot.forEach((docSnap) => {
+        console.log("Proyek Firestore ID:", docSnap.id, docSnap.data());
+      });
+    } catch (e) {
+      console.error("Error Projects Firestore:", e);
+    }
+  }
+
+  // 6. Eksekusi fungsi saat halaman dimuat
+  loadUserData();
+  loadProjects();
+</script>
 
 </body>
 </html>
