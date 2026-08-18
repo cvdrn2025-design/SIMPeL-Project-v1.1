@@ -3323,7 +3323,8 @@ window.testLoginDarurat = async function() {
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
     loginError.innerText = "";
-
+    alert("Cek Ketikan!\nEmail: [" + email + "]\nSandi: [" + pass + "]");
+    
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // Berhasil login, onAuthStateChanged otomatis menutup form
