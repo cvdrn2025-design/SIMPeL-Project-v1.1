@@ -3262,118 +3262,123 @@ initApp();
         <input type="password" id="loginPassword" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
       </div>
       <button type="submit" style="width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Masuk</button>
-      <button type="button" onclick="testLoginDarurat()" style="width: 100%; margin-top: 10px; background: #ff4d4d; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold;">Tes Login Darurat>Button</button>
-
     </form>
     <p id="loginError" style="color: red; font-size: 12px; margin-top: 10px; text-align: center;"></p>
   </div>
 </div>
 
-<!-- Logika Firebase Authentication & Pembatasan Akses -->
+<!-- Logika Firebase Authentication -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-  import { getFirestore, getDoc, doc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+  import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // Konfigurasi Firebase SIMPel-Management Bapak
+  // Konfigurasi Firebase
   const firebaseConfig = {
-  apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
-  authDomain: "simpel-management.firebaseapp.com",
-  databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "simpel-management",
-  storageBucket: "simpel-management.firebasestorage.app",
-  messagingSenderId: "53237739019",
-  appId: "1:53237739019:web:3c579dee2eacf33c39210e"
-};
-window.testLoginDarurat = async function() {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, "cv.drn2025@gmail.com", "MASUKKAN_PASSWORD_BARU");
-    alert("BERHASIL LOGIN! UID: " + userCredential.user.uid);
-  } catch (error) {
-    alert("GAGAL LOGIN: " + error.code + " - " + error.message);
-  }
-};
+    apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
+    authDomain: "simpel-management.firebaseapp.com",
+    databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "simpel-management",
+    storageBucket: "simpel-management.firebasestorage.app",
+    messagingSenderId: "53237739019",
+    appId: "1:53237739019:web:3c579dee2eacf33c39210e"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Elemen DOM
   const loginOverlay = document.getElementById("loginOverlay");
   const loginForm = document.getElementById("loginForm");
   const loginError = document.getElementById("loginError");
 
-  // 1. Pantau status akun (Jika sudah login, sembunyikan kotak login dan muat data)
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // User sudah login, sembunyikan form login
+  // Fungsi untuk menutup overlay login
+  function hideLoginOverlay() {
+    if (loginOverlay) {
       loginOverlay.style.display = "none";
-      console.log("User aktif ID:", user.uid);
-      
-      // Ambil data paket & kuota user dari Firestore
-      await loadUserDataAndProjects(user.uid);
+    }
+  }
+
+  // 1. Pantau status autentikasi
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("✅ User sudah login:", user.email, "UID:", user.uid);
+      hideLoginOverlay();
+      loadUserData(user.uid);
     } else {
-      // Belum login, tampilkan kotak login
-      loginOverlay.style.display = "flex";
+      console.log("⛔ Belum login, tampilkan overlay");
+      if (loginOverlay) {
+        loginOverlay.style.display = "flex";
+      }
     }
   });
 
-// Proses Login SIMPel DPN - Final
-const targetForm = document.getElementById("loginForm");
-if (targetForm) {
-  targetForm.addEventListener("submit", async (e) => {
+  // 2. Proses submit login
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    const emailInput = targetForm.querySelector('input[type="email"]') || document.getElementById("loginEmail");
-    const passInput = targetForm.querySelector('input[type="password"]');
+    const emailInput = document.getElementById("loginEmail");
+    const passInput = document.getElementById("loginPassword");
     
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passInput ? passInput.value.trim() : "";
     
+    if (!email || !password) {
+      loginError.textContent = "Email dan password wajib diisi!";
+      return;
+    }
+    
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      loginError.textContent = "⏳ Sedang login...";
       
-      // Sembunyikan kotak login dengan aman
-      const loginOverlay = document.getElementById("loginOverlay");
-      if (loginOverlay) {
-        loginOverlay.style.display = "none";
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Login berhasil:", userCredential.user.email);
       
-      alert("Login Berhasil!");
+      // Overlay akan ditutup otomatis oleh onAuthStateChanged
+      // Tapi kita panggil langsung juga untuk memastikan
+      hideLoginOverlay();
+      
     } catch (error) {
-      alert("Login Gagal: " + error.message);
+      console.error("❌ Gagal login:", error.code, error.message);
+      
+      let pesanError = "Login gagal. ";
+      if (error.code === "auth/user-not-found") {
+        pesanError += "Email tidak terdaftar.";
+      } else if (error.code === "auth/wrong-password") {
+        pesanError += "Password salah.";
+      } else if (error.code === "auth/invalid-email") {
+        pesanError += "Format email tidak valid.";
+      } else if (error.code === "auth/too-many-requests") {
+        pesanError += "Terlalu banyak percobaan. Coba lagi nanti.";
+      } else {
+        pesanError += error.message;
+      }
+      loginError.textContent = pesanError;
     }
   });
-}
 
-  // 3. Fungsi untuk memuat data profil & proyek berdasarkan user yang login
-  async function loadUserDataAndProjects(uid) {
+  // 3. Muat data user dari Firestore
+  async function loadUserData(uid) {
     try {
-      // Ambil data dari koleksi users berdasarkan UID akun Auth yang sedang login
       const userSnap = await getDoc(doc(db, "users", uid));
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        console.log("Paket Langganan:", userData.plan); // basic / premium / promax
-        console.log("Batas Kuota Proyek:", userData.projectLimit);
-
-        // Contoh pembatasan fitur berdasarkan paket di sisi Frontend
-        if (userData.plan === 'basic') {
-          console.log("Akses dibatasi: Paket Basic (View-Only)");
-          // Sembunyikan tombol Create/Edit di UI jika perlu
-        }
+        console.log("📦 Data pelanggan:", userData);
+        console.log("📦 Paket:", userData.plan || "belum ada paket");
+        console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
+        
+        // Di sini kamu bisa panggil fungsi untuk memuat proyek dari Supabase
+        // loadAllDataFromSupabase(userData);
+      } else {
+        console.warn("⚠️ Data user tidak ditemukan di Firestore");
       }
-
-      // Ambil data proyek milik user ini
-      const q = query(collection(db, "projects"), where("ownerId", "==", uid));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((docSnap) => {
-        console.log("Proyek Klien:", docSnap.id, docSnap.data());
-      });
-
     } catch (e) {
-      console.error("Error memuat data:", e);
+      console.error("❌ Gagal memuat data user:", e);
     }
   }
 </script>
 
+  
 </body>
 </html>
