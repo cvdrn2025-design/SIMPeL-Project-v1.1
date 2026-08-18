@@ -3418,6 +3418,48 @@ initApp();
       console.error("❌ Gagal memuat data user:", e);
     }
   }
+   // --- 4. Tampilkan notifikasi paket setelah login ---
+function showPlanNotification(plan) {
+  const planLabel = plan ? plan.toUpperCase() : 'BASIC';
+  const message = `✅ Selamat anda berada pada Paket ${planLabel}`;
+  
+  // Gunakan alert biasa
+  alert(message);
+  
+  // Atau (opsional) tampilkan notifikasi cantik di pojok kanan atas
+  // showToast(message, 'success');
+}
+
+// --- Panggil di dalam loadUserData ---
+async function loadUserData(uid) {
+  try {
+    const userSnap = await getDoc(doc(db, "users", uid));
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      console.log("📦 Data pelanggan:", userData);
+      
+      const plan = userData.plan || "basic";
+      console.log("📦 Paket:", plan);
+      console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
+      
+      // Simpan ke variabel global
+      window.fbUserPlan = plan;
+      window.fbUserRole = userData.role || "staff";
+      window.fbUserLimit = userData.projectLimit || 999;
+      
+      // ⭐ TAMPILKAN NOTIFIKASI PAKET
+      showPlanNotification(plan);
+      
+      // Panggil fungsi load data Supabase (jika ada)
+      // if (typeof loadAllData === "function") loadAllData();
+      
+    } else {
+      console.warn("⚠️ Data user tidak ditemukan di Firestore");
+    }
+  } catch (e) {
+    console.error("❌ Gagal memuat data user:", e);
+  }
+}
 </script>
   
 </body>
