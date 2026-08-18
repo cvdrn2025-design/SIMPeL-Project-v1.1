@@ -3247,143 +3247,178 @@ initApp();
 
 </script>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pelanggan - Simpel Management</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; color: #1f2937; }
-        
-        .navbar { display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; padding: 1rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .navbar h1 { font-size: 1.25rem; color: #111827; }
-        .user-profile { display: flex; align-items: center; gap: 1rem; }
-        .btn-logout { background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .btn-logout:hover { background-color: #dc2626; }
-
-        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-        .card h3 { border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; margin-bottom: 1rem; color: #2563eb; }
-        .data-row { display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
-        .data-label { font-weight: 600; color: #4b5563; }
-        
-        #loading-screen { position: fixed; inset: 0; background: white; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: 600; color: #4b5563; }
-    </style>
-</head>
-<body>
-
-    <!-- Layar Loading Proteksi -->
-    <div id="loading-screen">Memeriksa status login...</div>
-
-    <!-- Header & Navbar -->
-    <nav class="navbar">
-        <h1>Portal Pelanggan</h1>
-        <div class="user-profile">
-            <span id="userEmail">Loading...</span>
-            <button id="btnLogout" class="btn-logout">Keluar</button>
-        </div>
-    </nav>
-
-    <!-- Area Dashboard -->
-    <div class="container">
-        <div class="card">
-            <h3>Informasi Proyek Anda</h3>
-            <div id="kontenProyek">
-                <p>Mengambil data proyek...</p>
-            </div>
-        </div>
+<!-- ============================================================ -->
+<!-- LOGIN FIREBASE – SATU-SATUNYA LOGIN YANG DIGUNAKAN          -->
+<!-- ============================================================ -->
+<div id="fbLoginContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+  <div style="background: #ffffff; padding: 32px 28px; border-radius: 12px; width: 380px; max-width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif;">
+    
+    <!-- Logo / Judul -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 22px; font-weight: 700; color: #10263E; letter-spacing: 0.5px;">SIMPeL DRN</div>
+      <div style="font-size: 13px; color: #5B6675; margin-top: 2px;">Sistem Pemantauan Lapangan</div>
     </div>
 
-    <!-- SCRIPT FIREBASE -->
-    <script type="module">
-        import { initializeApp as initFirebaseApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { 
-            getAuth as getAuthPelanggan, 
-            signOut as signOutPelanggan,
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-        import { 
-            getDatabase, 
-            ref, 
-            get 
-        } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+    <form id="fbLoginForm">
+      <!-- Email -->
+      <div style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; color: #1B2431; margin-bottom: 5px;">Email</label>
+        <input type="email" name="fbEmail" placeholder="nama@email.com" required style="width: 100%; padding: 10px 12px; border: 1px solid #C9D3DC; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #F6F7F5;">
+      </div>
 
-        // 1. Konfigurasi Firebase Projek
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
-            authDomain: "simpel-management.firebaseapp.com",
-            databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "simpel-management",
-            storageBucket: "simpel-management.firebasestorage.app",
-            messagingSenderId: "53237739019",
-            appId: "1:53237739019:web:3c579dee2eacf33c39210e"
-        };
+      <!-- Password -->
+      <div style="margin-bottom: 22px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; color: #1B2431; margin-bottom: 5px;">Password</label>
+        <input type="password" name="fbPassword" placeholder="••••••••" required style="width: 100%; padding: 10px 12px; border: 1px solid #C9D3DC; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #F6F7F5;">
+      </div>
 
-        // Inisialisasi Service
-        const appPelanggan = initFirebaseApp(firebaseConfig);
-        const authPelanggan = getAuthPelanggan(appPelanggan);
-        const dbPelanggan = getDatabase(appPelanggan);
+      <!-- Tombol Login -->
+      <button type="submit" id="fbLoginBtn" style="width: 100%; background: #10263E; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+        Masuk ke Dashboard
+      </button>
 
-        // Elemen DOM
-        const loadingScreen = document.getElementById('loading-screen');
-        const userEmailDisplay = document.getElementById('userEmail');
-        const btnLogout = document.getElementById('btnLogout');
-        const kontenProyek = document.getElementById('kontenProyek');
+      <!-- Pesan Error -->
+      <div id="fbLoginError" style="color: #B23A2E; font-size: 13px; margin-top: 14px; text-align: center; min-height: 20px;"></div>
 
-        // =========================================================
-        // FITUR 1: ROUTE PROTECTION & AMBIL DATA PROYEK (UID MATCH)
-        // =========================================================
-        onAuthStateChanged(authPelanggan, async (user) => {
-            if (user) {
-                // User terautentikasi
-                loadingScreen.style.display = 'none';
-                userEmailDisplay.textContent = user.email;
+      <!-- Loading State -->
+      <div id="fbLoginLoading" style="display: none; text-align: center; font-size: 13px; color: #5B6675; margin-top: 12px;">⏳ Sedang memverifikasi...</div>
+    </form>
+    
+    <div style="text-align: center; margin-top: 16px; font-size: 12px; color: #5B6675;">
+      <span>🔒 Login aman via Firebase Authentication</span>
+    </div>
+  </div>
+</div>
 
-                // Mengambil data proyek dari node: /proyek/{user.uid}
-                try {
-                    const proyekRef = ref(dbPelanggan, 'proyek/' + user.uid);
-                    const snapshot = await get(proyekRef);
+<!-- ============================================================ -->
+<!-- LOGIKA FIREBASE AUTH – MODULE SCRIPT                         -->
+<!-- ============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        kontenProyek.innerHTML = `
-                            <div class="data-row"><span class="data-label">Nama Proyek:</span> <span>${data.namaProyek || '-'}</span></div>
-                            <div class="data-row"><span class="data-label">Lokasi:</span> <span>${data.lokasi || '-'}</span></div>
-                            <div class="data-row"><span class="data-label">Status Pengerjaan:</span> <span><b>${data.status || 'Berjalan'}</b></span></div>
-                            <div class="data-row"><span class="data-label">Progress:</span> <span>${data.progress || '0'}%</span></div>
-                        `;
-                    } else {
-                        kontenProyek.innerHTML = `<p style="color: #6b7280;">Belum ada data proyek yang terhubung dengan akun ini.</p>`;
-                    }
-                } catch (error) {
-                    console.error("Gagal mengambil data proyek:", error);
-                    kontenProyek.innerHTML = `<p style="color: #ef4444;">Gagal memuat data proyek.</p>`;
-                }
+  // --- Konfigurasi Firebase ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
+    authDomain: "simpel-management.firebaseapp.com",
+    databaseURL: "https://simpel-management-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "simpel-management",
+    storageBucket: "simpel-management.firebasestorage.app",
+    messagingSenderId: "53237739019",
+    appId: "1:53237739019:web:3c579dee2eacf33c39210e"
+  };
 
-            } else {
-                // User belum login -> Tendang balik ke halaman login
-                window.location.href = "index.html";
-            }
-        });
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-        // =========================================================
-        // FITUR 2: LOGIKA LOGOUT (SIGN OUT)
-        // =========================================================
-        btnLogout.addEventListener('click', async () => {
-            try {
-                await signOutPelanggan(authPelanggan);
-                window.location.href = "index.html"; // Redirect setelah logout
-            } catch (error) {
-                console.error("Gagal Logout:", error);
-                alert("Gagal keluar dari akun.");
-            }
-        });
-    </script>
-</body>
-</html>
+  // --- Elemen DOM ---
+  const loginContainer = document.getElementById("fbLoginContainer");
+  const loginForm = document.getElementById("fbLoginForm");
+  const errorEl = document.getElementById("fbLoginError");
+  const loadingEl = document.getElementById("fbLoginLoading");
+  const loginBtn = document.getElementById("fbLoginBtn");
 
+  // --- Fungsi tutup overlay ---
+  function hideFbLogin() {
+    if (loginContainer) {
+      loginContainer.style.display = "none";
+    }
+  }
 
+  // --- 1. Pantau status auth (Auto-login jika sudah login) ---
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("✅ Firebase: User login aktif:", user.email);
+      hideFbLogin();
+      loadUserData(user.uid);
+    } else {
+      console.log("ℹ️ Firebase: Belum login");
+      if (loginContainer) {
+        loginContainer.style.display = "flex";
+      }
+    }
+  });
+
+  // --- 2. Proses submit login ---
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Ambil input berdasarkan name attribute (lebih aman dari ID)
+    const emailInput = loginForm.querySelector('input[name="fbEmail"]');
+    const passInput = loginForm.querySelector('input[name="fbPassword"]');
+
+    const email = emailInput ? emailInput.value.trim() : "";
+    const password = passInput ? passInput.value.trim() : "";
+
+    // Reset error & loading
+    errorEl.textContent = "";
+    loadingEl.style.display = "block";
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Memproses...";
+
+    if (!email || !password) {
+      errorEl.textContent = "Email dan password wajib diisi!";
+      loadingEl.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Masuk ke Dashboard";
+      return;
+    }
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Firebase: Login berhasil:", userCredential.user.email);
+      
+      // Overlay akan hilang otomatis via onAuthStateChanged
+      // Tapi panggil langsung untuk memastikan
+      hideFbLogin();
+
+    } catch (error) {
+      console.error("❌ Firebase: Gagal login:", error.code, error.message);
+      
+      let msg = "Login gagal. ";
+      if (error.code === "auth/user-not-found") msg += "Email tidak terdaftar.";
+      else if (error.code === "auth/wrong-password") msg += "Password salah.";
+      else if (error.code === "auth/invalid-email") msg += "Format email tidak valid.";
+      else if (error.code === "auth/too-many-requests") msg += "Terlalu banyak percobaan. Coba lagi nanti.";
+      else msg += error.message;
+      
+      errorEl.textContent = msg;
+    } finally {
+      loadingEl.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Masuk ke Dashboard";
+    }
+  });
+
+  // --- 3. Load data user dari Firestore ---
+  async function loadUserData(uid) {
+    try {
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        console.log("📦 Data pelanggan:", userData);
+        console.log("📦 Paket:", userData.plan || "basic");
+        console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
+        
+        // Simpan ke variabel global untuk digunakan di UI nanti
+        window.fbUserPlan = userData.plan || "basic";
+        window.fbUserRole = userData.role || "staff";
+        window.fbUserLimit = userData.projectLimit || 999;
+        
+        // Panggil fungsi load data Supabase (jika ada)
+        // Contoh: if (typeof loadAllData === "function") loadAllData();
+        // Atau kamu bisa panggil di sini sesuai kebutuhan
+        
+      } else {
+        console.warn("⚠️ Data user tidak ditemukan di Firestore");
+      }
+    } catch (e) {
+      console.error("❌ Gagal memuat data user:", e);
+    }
+  }
+</script>
+  
 </body>
 </html>
