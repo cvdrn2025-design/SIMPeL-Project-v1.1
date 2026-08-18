@@ -3320,16 +3320,22 @@ window.testLoginDarurat = async function() {
   // 2. Proses saat tombol Login ditekan
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  
   const email = document.getElementById("loginEmail").value;
-  const password = document.querySelector('input[type="password"]').value;
-  loginError.innerText = "";
+  // Memastikan kita mengambil nilai password dengan benar
+  const passInput = document.querySelector('input[type="password"]');
+  const password = passInput ? passInput.value : "";
+
+  // Debug: Pastikan data yang dikirim terbaca
+  alert("Data Login:\nEmail: " + email + "\nSandi: " + password);
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    // Berhasil login, onAuthStateChanged otomatis menutup form
+    alert("Login Berhasil! Mengalihkan...");
   } catch (error) {
-    console.error("Gagal login:", error.message);
-    loginError.innerText = "Email atau Password salah!";
+    // Menampilkan pesan error asli dari Firebase agar kita tahu penyebabnya
+    alert("GAGAL LOGIN:\n" + error.message);
+    loginError.innerText = "Error: " + error.message;
   }
 });
     alert("Cek Ketikan!\nEmail: [" + email + "]\nSandi: [" + password + "]");
