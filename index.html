@@ -3319,6 +3319,7 @@ window.testLoginDarurat = async function() {
 
   // 2. Proses saat tombol Login ditekan
   loginForm.addEventListener("submit", async (e) => {
+    alert("Tombol ditekan!");
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
