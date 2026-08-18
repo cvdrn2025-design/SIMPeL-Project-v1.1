@@ -3317,48 +3317,28 @@ window.testLoginDarurat = async function() {
     }
   });
 
-// 2. Proses saat tombol Login ditekan (Anti-Gagal Tangkap Password)
+  // Proses Login Paling Aman
 const targetForm = document.getElementById("loginForm");
 if (targetForm) {
   targetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    // Ambil elemen email dan sandi dengan aman
-    const emailInput = document.getElementById("loginEmail");
-    const passInput = document.getElementById("loginPassword") || document.querySelector('input[type="password"]');
+    // Mencari input email & sandi langsung di dalam form yang ditekan
+    const emailInput = targetForm.querySelector('input[type="email"]') || targetForm.querySelector('input[type="text"]');
+    const passInput = targetForm.querySelector('input[type="password"]');
     
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passInput ? passInput.value.trim() : "";
     
-    // Cek darurat jika sandi masih kosong
-    if (!password) {
-      alert("Kotak sandi tidak terbaca! Pastikan kolom sandi terisi.");
-      return;
-    }
-    
+    // Login tanpa pesan error "tidak terbaca"
     try {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Login Berhasil!");
     } catch (error) {
-      alert("GAGAL LOGIN: " + error.message);
+      alert("Login Gagal: " + error.message);
     }
   });
 }
-async function loadUserDataAndProjects(uid) {
-  try {
-    // Proses ambil data dari Firestore...
-    
-    // Sembunyikan loading setelah selesai
-    const loadingScreen = document.getElementById("loadingScreen");
-    if (loadingScreen) loadingScreen.style.display = "none";
-    
-  } catch (error) {
-    console.error("Gagal memuat data:", error);
-    // Tetap tutup loading agar aplikasi bisa dibuka
-    const loadingScreen = document.getElementById("loadingScreen");
-    if (loadingScreen) loadingScreen.style.display = "none";
-  }
-        }
 
   // 3. Fungsi untuk memuat data profil & proyek berdasarkan user yang login
   async function loadUserDataAndProjects(uid) {
