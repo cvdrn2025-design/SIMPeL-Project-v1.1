@@ -3317,15 +3317,10 @@ window.testLoginDarurat = async function() {
     }
   });
 
-  // 2. Proses saat tombol Login ditekan
-// Kode Anti-Macet: Langsung tangkap tombol login
-document.addEventListener("click", async (e) => {
-  // Cek apakah yang diklik adalah tombol login
-  if (e.target && (e.target.id === "loginBtn" || e.target.type === "submit" && e.target.closest("form"))) {
-    // Cari form login terdekat
-    const form = e.target.closest("form");
-    if (!form) return;
-    
+      // 2. Proses saat tombol Login ditekan
+const targetForm = document.getElementById("loginForm");
+if (targetForm) {
+  targetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     const emailInput = document.getElementById("loginEmail");
@@ -3334,45 +3329,16 @@ document.addEventListener("click", async (e) => {
     const email = emailInput ? emailInput.value : "";
     const password = passInput ? passInput.value : "";
     
-    alert("Tombol Berhasil Ditekan!\nEmail: " + email + "\nSandi: " + password);
+    alert("Data Login:\nEmail: " + email + "\nSandi: " + password);
     
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      alert("Login Berhasil! Masuk ke sistem...");
+      alert("Login Berhasil!");
     } catch (error) {
-      alert("GAGAL LOGIN DARI FIREBASE:\n" + error.message);
-    }
-  }
-});
-  e.preventDefault();
-  
-  const email = document.getElementById("loginEmail").value;
-  // Memastikan kita mengambil nilai password dengan benar
-  const passInput = document.querySelector('input[type="password"]');
-  const password = passInput ? passInput.value : "";
-
-  // Debug: Pastikan data yang dikirim terbaca
-  alert("Data Login:\nEmail: " + email + "\nSandi: " + password);
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    alert("Login Berhasil! Mengalihkan...");
-  } catch (error) {
-    // Menampilkan pesan error asli dari Firebase agar kita tahu penyebabnya
-    alert("GAGAL LOGIN:\n" + error.message);
-    loginError.innerText = "Error: " + error.message;
-  }
-});
-    alert("Cek Ketikan!\nEmail: [" + email + "]\nSandi: [" + password + "]");
-    
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Berhasil login, onAuthStateChanged otomatis menutup form
-    } catch (error) {
-      console.error("Gagal login:", error.message);
-      loginError.innerText = "Email atau Password salah!";
+      alert("GAGAL LOGIN: " + error.message);
     }
   });
+}
 
   // 3. Fungsi untuk memuat data profil & proyek berdasarkan user yang login
   async function loadUserDataAndProjects(uid) {
