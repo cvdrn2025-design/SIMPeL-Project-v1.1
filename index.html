@@ -3318,12 +3318,20 @@ window.testLoginDarurat = async function() {
   });
 
   // 2. Proses saat tombol Login ditekan
-  loginForm.addEventListener("submit", async (e) => {
-    alert("Tombol ditekan!");
-    e.preventDefault();
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
-    loginError.innerText = "";
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value;
+  const password = document.querySelector('input[type="password"]').value;
+  loginError.innerText = "";
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // Berhasil login, onAuthStateChanged otomatis menutup form
+  } catch (error) {
+    console.error("Gagal login:", error.message);
+    loginError.innerText = "Email atau Password salah!";
+  }
+});
     alert("Cek Ketikan!\nEmail: [" + email + "]\nSandi: [" + password + "]");
     
     try {
