@@ -3248,32 +3248,58 @@ initApp();
 </script>
   <!-- Integrasi Firebase Firestore -->
 
-<!-- Bagian Tampilan (UI) Form Login Sederhana -->
-<div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; justify-content: center; align-items: center;">
-  <div style="background: white; padding: 30px; border-radius: 8px; width: 350px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-    <h3 style="margin-bottom: 20px; text-align: center; color: #1e293b;">Login SIMPel DRN</h3>
-    <form id="loginForm">
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-size: 14px;">Email</label>
-        <input type="email" id="loginEmail" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+<!-- ============================================================ -->
+<!-- LOGIN FIREBASE – SATU-SATUNYA LOGIN YANG DIGUNAKAN          -->
+<!-- ============================================================ -->
+<div id="fbLoginContainer" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+  <div style="background: #ffffff; padding: 32px 28px; border-radius: 12px; width: 380px; max-width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif;">
+    
+    <!-- Logo / Judul -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 22px; font-weight: 700; color: #10263E; letter-spacing: 0.5px;">SIMPeL DRN</div>
+      <div style="font-size: 13px; color: #5B6675; margin-top: 2px;">Sistem Pemantauan Lapangan</div>
+    </div>
+
+    <form id="fbLoginForm">
+      <!-- Email -->
+      <div style="margin-bottom: 18px;">
+        <label for="fbEmail" style="display: block; font-size: 13px; font-weight: 600; color: #1B2431; margin-bottom: 5px;">Email</label>
+        <input type="email" id="fbEmail" placeholder="nama@email.com" required style="width: 100%; padding: 10px 12px; border: 1px solid #C9D3DC; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #F6F7F5;">
       </div>
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 5px; font-size: 14px;">Password</label>
-        <input type="password" id="loginPassword" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+
+      <!-- Password -->
+      <div style="margin-bottom: 22px;">
+        <label for="fbPassword" style="display: block; font-size: 13px; font-weight: 600; color: #1B2431; margin-bottom: 5px;">Password</label>
+        <input type="password" id="fbPassword" placeholder="••••••••" required style="width: 100%; padding: 10px 12px; border: 1px solid #C9D3DC; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #F6F7F5;">
       </div>
-      <button type="submit" style="width: 100%; background: #2563eb; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Masuk</button>
+
+      <!-- Tombol Login -->
+      <button type="submit" id="fbLoginBtn" style="width: 100%; background: #10263E; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+        Masuk ke Dashboard
+      </button>
+
+      <!-- Pesan Error -->
+      <div id="fbLoginError" style="color: #B23A2E; font-size: 13px; margin-top: 14px; text-align: center; min-height: 20px;"></div>
+
+      <!-- Loading State -->
+      <div id="fbLoginLoading" style="display: none; text-align: center; font-size: 13px; color: #5B6675; margin-top: 12px;">⏳ Sedang memverifikasi...</div>
     </form>
-    <p id="loginError" style="color: red; font-size: 12px; margin-top: 10px; text-align: center;"></p>
+    
+    <div style="text-align: center; margin-top: 16px; font-size: 12px; color: #5B6675;">
+      <span>🔒 Login aman via Firebase Authentication</span>
+    </div>
   </div>
 </div>
 
-<!-- Logika Firebase Authentication -->
+<!-- ============================================================ -->
+<!-- LOGIKA FIREBASE AUTH – MODULE SCRIPT                         -->
+<!-- ============================================================ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
   import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // Konfigurasi Firebase
+  // --- Konfigurasi Firebase ---
   const firebaseConfig = {
     apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
     authDomain: "simpel-management.firebaseapp.com",
@@ -3288,88 +3314,102 @@ initApp();
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Elemen DOM
-  const loginOverlay = document.getElementById("loginOverlay");
-  const loginForm = document.getElementById("loginForm");
-  const loginError = document.getElementById("loginError");
+  // --- Elemen DOM ---
+  const loginContainer = document.getElementById("fbLoginContainer");
+  const loginForm = document.getElementById("fbLoginForm");
+  const emailInput = document.getElementById("fbEmail");
+  const passInput = document.getElementById("fbPassword");
+  const errorEl = document.getElementById("fbLoginError");
+  const loadingEl = document.getElementById("fbLoginLoading");
+  const loginBtn = document.getElementById("fbLoginBtn");
 
-  // Fungsi untuk menutup overlay login
-  function hideLoginOverlay() {
-    if (loginOverlay) {
-      loginOverlay.style.display = "none";
+  // --- Fungsi tutup overlay ---
+  function hideFbLogin() {
+    if (loginContainer) {
+      loginContainer.style.display = "none";
     }
   }
 
-  // 1. Pantau status autentikasi
+  // --- 1. Pantau status auth (Auto-login jika sudah login) ---
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      console.log("✅ User sudah login:", user.email, "UID:", user.uid);
-      hideLoginOverlay();
+      console.log("✅ Firebase: User login aktif:", user.email);
+      hideFbLogin();
       loadUserData(user.uid);
     } else {
-      console.log("⛔ Belum login, tampilkan overlay");
-      if (loginOverlay) {
-        loginOverlay.style.display = "flex";
+      console.log("ℹ️ Firebase: Belum login");
+      if (loginContainer) {
+        loginContainer.style.display = "flex";
       }
     }
   });
 
-  // 2. Proses submit login
+  // --- 2. Proses submit login ---
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
-    const emailInput = document.getElementById("loginEmail");
-    const passInput = document.getElementById("loginPassword");
-    
-    const email = emailInput ? emailInput.value.trim() : "";
-    const password = passInput ? passInput.value.trim() : "";
-    
+
+    const email = emailInput.value.trim();
+    const password = passInput.value.trim();
+
+    // Reset error & loading
+    errorEl.textContent = "";
+    loadingEl.style.display = "block";
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Memproses...";
+
     if (!email || !password) {
-      loginError.textContent = "Email dan password wajib diisi!";
+      errorEl.textContent = "Email dan password wajib diisi!";
+      loadingEl.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Masuk ke Dashboard";
       return;
     }
-    
+
     try {
-      loginError.textContent = "⏳ Sedang login...";
-      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("✅ Login berhasil:", userCredential.user.email);
+      console.log("✅ Firebase: Login berhasil:", userCredential.user.email);
       
-      // Overlay akan ditutup otomatis oleh onAuthStateChanged
-      // Tapi kita panggil langsung juga untuk memastikan
-      hideLoginOverlay();
-      
+      // Overlay akan hilang otomatis via onAuthStateChanged
+      // Tapi panggil langsung untuk memastikan
+      hideFbLogin();
+
     } catch (error) {
-      console.error("❌ Gagal login:", error.code, error.message);
+      console.error("❌ Firebase: Gagal login:", error.code, error.message);
       
-      let pesanError = "Login gagal. ";
-      if (error.code === "auth/user-not-found") {
-        pesanError += "Email tidak terdaftar.";
-      } else if (error.code === "auth/wrong-password") {
-        pesanError += "Password salah.";
-      } else if (error.code === "auth/invalid-email") {
-        pesanError += "Format email tidak valid.";
-      } else if (error.code === "auth/too-many-requests") {
-        pesanError += "Terlalu banyak percobaan. Coba lagi nanti.";
-      } else {
-        pesanError += error.message;
-      }
-      loginError.textContent = pesanError;
+      let msg = "Login gagal. ";
+      if (error.code === "auth/user-not-found") msg += "Email tidak terdaftar.";
+      else if (error.code === "auth/wrong-password") msg += "Password salah.";
+      else if (error.code === "auth/invalid-email") msg += "Format email tidak valid.";
+      else if (error.code === "auth/too-many-requests") msg += "Terlalu banyak percobaan. Coba lagi nanti.";
+      else msg += error.message;
+      
+      errorEl.textContent = msg;
+    } finally {
+      loadingEl.style.display = "none";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Masuk ke Dashboard";
     }
   });
 
-  // 3. Muat data user dari Firestore
+  // --- 3. Load data user dari Firestore ---
   async function loadUserData(uid) {
     try {
       const userSnap = await getDoc(doc(db, "users", uid));
       if (userSnap.exists()) {
         const userData = userSnap.data();
         console.log("📦 Data pelanggan:", userData);
-        console.log("📦 Paket:", userData.plan || "belum ada paket");
+        console.log("📦 Paket:", userData.plan || "basic");
         console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
         
-        // Di sini kamu bisa panggil fungsi untuk memuat proyek dari Supabase
-        // loadAllDataFromSupabase(userData);
+        // Simpan ke variabel global untuk digunakan di UI nanti
+        window.fbUserPlan = userData.plan || "basic";
+        window.fbUserRole = userData.role || "staff";
+        window.fbUserLimit = userData.projectLimit || 999;
+        
+        // Panggil fungsi load data Supabase (jika ada)
+        // Contoh: if (typeof loadAllData === "function") loadAllData();
+        // Atau kamu bisa panggil di sini sesuai kebutuhan
+        
       } else {
         console.warn("⚠️ Data user tidak ditemukan di Firestore");
       }
@@ -3378,7 +3418,6 @@ initApp();
     }
   }
 </script>
-
   
 </body>
 </html>
