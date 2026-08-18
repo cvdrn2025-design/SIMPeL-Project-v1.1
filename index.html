@@ -3293,12 +3293,11 @@ initApp();
 <!-- ============================================================ -->
 <!-- LOGIKA FIREBASE AUTH – MODULE SCRIPT                         -->
 <!-- ============================================================ -->
-<script type="module">
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
   import { getFirestore, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // --- Konfigurasi Firebase ---
   const firebaseConfig = {
     apiKey: "AIzaSyBUqZKp6xq8prCCdtJG172WUA0h9WNZU9Y",
     authDomain: "simpel-management.firebaseapp.com",
@@ -3313,46 +3312,37 @@ initApp();
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // --- Elemen DOM ---
+  // Elemen DOM
   const loginContainer = document.getElementById("fbLoginContainer");
   const loginForm = document.getElementById("fbLoginForm");
   const errorEl = document.getElementById("fbLoginError");
   const loadingEl = document.getElementById("fbLoginLoading");
   const loginBtn = document.getElementById("fbLoginBtn");
 
-  // --- Fungsi tutup overlay ---
   function hideFbLogin() {
-    if (loginContainer) {
-      loginContainer.style.display = "none";
-    }
+    if (loginContainer) loginContainer.style.display = "none";
   }
 
-  // --- 1. Pantau status auth (Auto-login jika sudah login) ---
+  // --- 1. Pantau status auth ---
   onAuthStateChanged(auth, (user) => {
     if (user) {
       console.log("✅ Firebase: User login aktif:", user.email);
-      hideFbLogin();
+      hideFbLogin(); // Tutup overlay SEBELUM load data
       loadUserData(user.uid);
     } else {
-      console.log("ℹ️ Firebase: Belum login");
-      if (loginContainer) {
-        loginContainer.style.display = "flex";
-      }
+      if (loginContainer) loginContainer.style.display = "flex";
     }
   });
 
-  // --- 2. Proses submit login ---
+  // --- 2. Submit login ---
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Ambil input berdasarkan name attribute (lebih aman dari ID)
     const emailInput = loginForm.querySelector('input[name="fbEmail"]');
     const passInput = loginForm.querySelector('input[name="fbPassword"]');
-
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passInput ? passInput.value.trim() : "";
 
-    // Reset error & loading
     errorEl.textContent = "";
     loadingEl.style.display = "block";
     loginBtn.disabled = true;
@@ -3369,21 +3359,16 @@ initApp();
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("✅ Firebase: Login berhasil:", userCredential.user.email);
-      
-      // Overlay akan hilang otomatis via onAuthStateChanged
-      // Tapi panggil langsung untuk memastikan
-      hideFbLogin();
-
+      hideFbLogin(); // Tutup overlay
+      loadUserData(userCredential.user.uid);
     } catch (error) {
       console.error("❌ Firebase: Gagal login:", error.code, error.message);
-      
       let msg = "Login gagal. ";
       if (error.code === "auth/user-not-found") msg += "Email tidak terdaftar.";
       else if (error.code === "auth/wrong-password") msg += "Password salah.";
       else if (error.code === "auth/invalid-email") msg += "Format email tidak valid.";
       else if (error.code === "auth/too-many-requests") msg += "Terlalu banyak percobaan. Coba lagi nanti.";
       else msg += error.message;
-      
       errorEl.textContent = msg;
     } finally {
       loadingEl.style.display = "none";
@@ -3392,75 +3377,61 @@ initApp();
     }
   });
 
-  // --- 3. Load data user dari Firestore ---
+  // --- 3. Load data user & tampilkan notifikasi ---
   async function loadUserData(uid) {
     try {
       const userSnap = await getDoc(doc(db, "users", uid));
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        console.log("📦 Data pelanggan:", userData);
-        console.log("📦 Paket:", userData.plan || "basic");
-        console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
+        const plan = userData.plan || "basic";
+        console.log("📦 Paket:", plan);
         
-        // Simpan ke variabel global untuk digunakan di UI nanti
-        window.fbUserPlan = userData.plan || "basic";
+        // Simpan variabel global
+        window.fbUserPlan = plan;
         window.fbUserRole = userData.role || "staff";
         window.fbUserLimit = userData.projectLimit || 999;
-        
-        // Panggil fungsi load data Supabase (jika ada)
-        // Contoh: if (typeof loadAllData === "function") loadAllData();
-        // Atau kamu bisa panggil di sini sesuai kebutuhan
-        
+
+        // Tampilkan notifikasi paket
+        const planLabel = plan.toUpperCase();
+        // Gunakan alert (paling sederhana dan pasti jalan)
+        setTimeout(() => {
+          alert(`✅ Selamat anda berada pada Paket ${planLabel}`);
+        }, 300); // Sedikit delay agar overlay benar-benar hilang
+
+        // Panggil fungsi load Supabase
+        if (typeof loadAllData === "function") {
+          loadAllData();
+        }
       } else {
-        console.warn("⚠️ Data user tidak ditemukan di Firestore");
+        // Data user tidak ditemukan, tapi login tetap berhasil
+        console.warn("⚠️ Data user tidak ditemukan di Firestore, tetapi login tetap berhasil.");
+        // Beri notifikasi default
+        setTimeout(() => {
+          alert("✅ Login berhasil, namun data paket belum terdaftar.");
+        }, 300);
+        // Tetap jalankan aplikasi dengan default
+        window.fbUserPlan = "basic";
+        window.fbUserRole = "staff";
+        window.fbUserLimit = 999;
+        if (typeof loadAllData === "function") {
+          loadAllData();
+        }
       }
     } catch (e) {
       console.error("❌ Gagal memuat data user:", e);
+      // Tetap biarkan login berjalan, jangan gagalkan
+      setTimeout(() => {
+        alert("✅ Login berhasil, namun terjadi error saat memuat data profil.");
+      }, 300);
+      window.fbUserPlan = "basic";
+      window.fbUserRole = "staff";
+      window.fbUserLimit = 999;
+      if (typeof loadAllData === "function") {
+        loadAllData();
+      }
     }
   }
-   // --- 4. Tampilkan notifikasi paket setelah login ---
-function showPlanNotification(plan) {
-  const planLabel = plan ? plan.toUpperCase() : 'BASIC';
-  const message = `✅ Selamat anda berada pada Paket ${planLabel}`;
-  
-  // Gunakan alert biasa
-  alert(message);
-  
-  // Atau (opsional) tampilkan notifikasi cantik di pojok kanan atas
-  // showToast(message, 'success');
-}
+    </script>      
 
-// --- Panggil di dalam loadUserData ---
-async function loadUserData(uid) {
-  try {
-    const userSnap = await getDoc(doc(db, "users", uid));
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-      console.log("📦 Data pelanggan:", userData);
-      
-      const plan = userData.plan || "basic";
-      console.log("📦 Paket:", plan);
-      console.log("📦 Batas proyek:", userData.projectLimit || "tidak terbatas");
-      
-      // Simpan ke variabel global
-      window.fbUserPlan = plan;
-      window.fbUserRole = userData.role || "staff";
-      window.fbUserLimit = userData.projectLimit || 999;
-      
-      // ⭐ TAMPILKAN NOTIFIKASI PAKET
-      showPlanNotification(plan);
-      
-      // Panggil fungsi load data Supabase (jika ada)
-      // if (typeof loadAllData === "function") loadAllData();
-      
-    } else {
-      console.warn("⚠️ Data user tidak ditemukan di Firestore");
-    }
-  } catch (e) {
-    console.error("❌ Gagal memuat data user:", e);
-  }
-}
-</script>
-  
 </body>
 </html>
