@@ -3318,7 +3318,32 @@ window.testLoginDarurat = async function() {
   });
 
   // 2. Proses saat tombol Login ditekan
-loginForm.addEventListener("submit", async (e) => {
+// Kode Anti-Macet: Langsung tangkap tombol login
+document.addEventListener("click", async (e) => {
+  // Cek apakah yang diklik adalah tombol login
+  if (e.target && (e.target.id === "loginBtn" || e.target.type === "submit" && e.target.closest("form"))) {
+    // Cari form login terdekat
+    const form = e.target.closest("form");
+    if (!form) return;
+    
+    e.preventDefault();
+    
+    const emailInput = document.getElementById("loginEmail");
+    const passInput = document.querySelector('input[type="password"]');
+    
+    const email = emailInput ? emailInput.value : "";
+    const password = passInput ? passInput.value : "";
+    
+    alert("Tombol Berhasil Ditekan!\nEmail: " + email + "\nSandi: " + password);
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("Login Berhasil! Masuk ke sistem...");
+    } catch (error) {
+      alert("GAGAL LOGIN DARI FIREBASE:\n" + error.message);
+    }
+  }
+});
   e.preventDefault();
   
   const email = document.getElementById("loginEmail").value;
