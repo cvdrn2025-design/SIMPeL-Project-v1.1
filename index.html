@@ -3317,24 +3317,28 @@ window.testLoginDarurat = async function() {
     }
   });
 
-  // Proses Login Paling Aman
+// Proses Login SIMPel DPN - Final
 const targetForm = document.getElementById("loginForm");
 if (targetForm) {
   targetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    // Mencari input email & sandi langsung di dalam form yang ditekan
-    const emailInput = targetForm.querySelector('input[type="email"]') || targetForm.querySelector('input[type="text"]');
+    const emailInput = targetForm.querySelector('input[type="email"]') || document.getElementById("loginEmail");
     const passInput = targetForm.querySelector('input[type="password"]');
     
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passInput ? passInput.value.trim() : "";
     
-    // Login tanpa pesan error "tidak terbaca"
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      
+      // Sembunyikan kotak login dengan aman
+      const loginOverlay = document.getElementById("loginOverlay");
+      if (loginOverlay) {
+        loginOverlay.style.display = "none";
+      }
+      
       alert("Login Berhasil!");
-      style.display = "none"
     } catch (error) {
       alert("Login Gagal: " + error.message);
     }
