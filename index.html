@@ -1251,11 +1251,35 @@ function applyRoleUI(){
   renderPicProyek();
 }
 
-function logoutUser(){
+function logoutUser() {
+  // 1. Logout dari Firebase
+  if (window.firebaseAuth) {
+    window.firebaseAuth.signOut()
+      .then(() => {
+        console.log("✅ Berhasil logout dari Firebase");
+      })
+      .catch((error) => {
+        console.error("❌ Gagal logout dari Firebase:", error);
+      });
+  }
+
+  // 2. Hapus semua data sesi lokal
   sessionStorage.removeItem('drn_session_role');
   sessionStorage.removeItem('drn_staff_project_id');
   sessionStorage.removeItem('drn_rab_unlocked');
-  document.getElementById('loginOverlay').style.display = 'flex';
+
+  // 3. Reset badge dan tampilan
+  document.getElementById('roleBadge').textContent = '';
+
+  // 4. Reset form login agar kosong saat muncul kembali
+  const loginForm = document.getElementById('fbLoginForm');
+  if (loginForm) loginForm.reset();
+
+  // 5. Tampilkan overlay login Firebase (otomatis juga akan ditampilkan oleh listener onAuthStateChanged)
+  const fbLoginContainer = document.getElementById('fbLoginContainer');
+  if (fbLoginContainer) {
+    fbLoginContainer.style.display = 'flex';
+  }
 }
 
 // ---------- Reset Password (pakai Kode Pemulihan) ----------
@@ -3311,6 +3335,7 @@ initApp();
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  window.firebaseAuth = auth;
   const db = getFirestore(app);
 
   // --- Elemen DOM ---
