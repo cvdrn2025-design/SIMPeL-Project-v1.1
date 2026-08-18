@@ -3334,6 +3334,7 @@ if (targetForm) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Login Berhasil!");
+      style.display = "none"
     } catch (error) {
       alert("Login Gagal: " + error.message);
     }
