@@ -3344,6 +3344,21 @@ if (targetForm) {
     }
   });
 }
+async function loadUserDataAndProjects(uid) {
+  try {
+    // Proses ambil data dari Firestore...
+    
+    // Sembunyikan loading setelah selesai
+    const loadingScreen = document.getElementById("loadingScreen");
+    if (loadingScreen) loadingScreen.style.display = "none";
+    
+  } catch (error) {
+    console.error("Gagal memuat data:", error);
+    // Tetap tutup loading agar aplikasi bisa dibuka
+    const loadingScreen = document.getElementById("loadingScreen");
+    if (loadingScreen) loadingScreen.style.display = "none";
+  }
+        }
 
   // 3. Fungsi untuk memuat data profil & proyek berdasarkan user yang login
   async function loadUserDataAndProjects(uid) {
