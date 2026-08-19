@@ -1106,36 +1106,46 @@ async function saveNewProject(e) {
 }
 
 async function deleteCurrentProject(){
-  if(currentRole() !== 'management'){
-    alert('Hanya peran Management yang bisa menghapus proyek.');
-    return;
-  }
-  if(!currentProjectId) return;
-  const p = projects.find(x=>x.id===currentProjectId);
-  if(!p) return;
-  if(!confirm(`Hapus proyek "${p.nama}" beserta semua datanya? Tindakan ini tidak bisa dibatalkan.`)) return;
-  try{
+    if(currentRole() !== 'management'){
+        alert('Hanya peran Management yang bisa menghapus proyek.');
+        return;
+    }
+    if(!currentProjectId) return;
+    const p = projects.find(x=>x.id==currentProjectId);
+    if(!p) return;
+    if(!confirm('Hapus proyek ${p.name} beserta semua datanya? Tindakan ini tidak bisa dibatalkan.')) return;
+
     const { error } = await sb.from('projects').delete().eq('id', currentProjectId);
     if(error) throw error;
-    // data anak (progress, material, dst.) terhapus otomatis lewat ON DELETE CASCADE di database
-    projects = projects.filter(x=>x.id!==currentProjectId);
-    progressLog = progressLog.filter(x=>x.projectId!==currentProjectId);
-    materialLog = materialLog.filter(x=>x.projectId!==currentProjectId);
-    timesheetLog = timesheetLog.filter(x=>x.projectId!==currentProjectId);
-    allocations = allocations.filter(x=>x.projectId!==currentProjectId);
-    cashflowLog = cashflowLog.filter(x=>x.projectId!==currentProjectId);
-    planLog = planLog.filter(x=>x.projectId!==currentProjectId);
-    rabList = rabList.filter(x=>x.projectId!==currentProjectId);
-    wageRates = wageRates.filter(x=>x.projectId!==currentProjectId);
-    picList = picList.filter(x=>x.projectId!==currentProjectId);
+
+    // ===== TAMBAHKAN DI SINI (BARIS 13) =====
+    // Update projectCount di Firestore
+    const user = firebase.auth().currentUser;
+    if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            projectCount: increment(-1)   // Kurangi 1
+        });
+        console.log('✅ projectCount dikurangi!');
+    }
+    // ===== SAMPAI SINI =====
+
+    // data anak (progress, material, dst.) terhapus otomatis lewat ON DELETE CASCADE
+    projects = projects.filter(x=>x.id==currentProjectId);
+    progressLog = progressLog.filter(x=>x.projectId==currentProjectId);
+    materialLog = materialLog.filter(x=>x.projectId==currentProjectId);
+    timesheetLog = timesheetLog.filter(x=>x.projectId==currentProjectId);
+    allocations = allocations.filter(x=>x.projectId==currentProjectId);
+    cashflowLog = cashflowLog.filter(x=>x.projectId==currentProjectId);
+    planLog = planLog.filter(x=>x.projectId==currentProjectId);
+    rablist = rablist.filter(x=>x.projectId==currentProjectId);
+    wageRates = wageRates.filter(x=>x.projectId==currentProjectId);
+    piclist = piclist.filter(x=>x.projectId==currentProjectId);
     currentProjectId = projects.length ? projects[0].id : null;
     localStorage.setItem(KEYS.current, currentProjectId || '');
     renderProjectSelect();
     renderAll();
-  } catch(err){
-    alert('Gagal menghapus proyek di Supabase: ' + err.message);
   }
-}
 
 // ---------- Tabs ----------
 function switchTab(name){
