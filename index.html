@@ -1039,52 +1039,70 @@ async function handleNewProjectRabFile(e){
   }
 }
 
-async function saveNewProject(e){
-  e.preventDefault();
-  const nama = document.getElementById('npNama').value.trim();
-  if(!nama) return false;
-  const payload = {
-    nama,
-    lokasi: document.getElementById('npLokasi').value || null,
-    nomor_kontrak: document.getElementById('npNomorKontrak').value || null,
-    nilai_kontrak: document.getElementById('npNilaiKontrak').value || null,
-    tanggal_mulai: document.getElementById('npMulai').value || null,
-    tanggal_selesai: document.getElementById('npSelesai').value || null
-  };
-  try{
-    const { data, error } = await sb.from('projects').insert(payload).select().single();
-    if(error) throw error;
-    const p = mapProject(data);
-    projects.push(p);
-    currentProjectId = p.id;
-    localStorage.setItem(KEYS.current, p.id);
+// ===== TAMBAHKAN DI ATAS (baris 1) =====
+import { doc, updateDoc, increment } from 'firebase/firestore';
+// =========================================
 
-    if(pendingRabItems.length){
-      try{
-        const rabPayload = pendingRabItems.map((it, idx) => ({
-          project_id: p.id,
-          no_urut: idx + 1,
-          uraian: it.uraian,
-          volume: it.volume,
-          satuan: it.satuan,
-          harga_satuan: it.hargaSatuan,
-          jumlah_harga: it.jumlahHarga
-        }));
-        const { data: rabData, error: rabError } = await sb.from('rab_items').insert(rabPayload).select();
-        if(rabError) throw rabError;
-        rabList.push(...rabData.map(mapRab));
-      } catch(rabErr){
-        alert('Proyek berhasil dibuat, tapi gagal menyimpan RAB/BoQ: ' + rabErr.message + '\n\nKamu bisa impor ulang lewat menu RAB/BoQ nanti.');
-      }
+async function saveNewProject(e) {
+    e.preventDefault();
+    const nama = document.getElementById('npNama').value;
+    if (!nama) return false;
+
+    const payload = {
+        nama,
+        lokasi: document.getElementById('npLokasi').value,
+        nomor_kontrak: document.getElementById('npNomorKontrak').value,
+        nilai_kontrak: document.getElementById('npNilaiKontrak').value,
+        tanggal_mulai: document.getElementById('npTanggalMula').value,
+        tanggal_selesai: document.getElementById('npSelesai').value
+    };
+
+    try {
+        // 1. Simpan proyek ke Supabase
+        const { data, error } = await sb.from('project').insert(payload);
+        if (error) throw error;
+        
+        const p = mapProject(data);
+        projects.push(p);
+        currentProjectId = p.id;
+        localStorage.setItem(Keys.current, p.id);
+
+        // ===== TAMBAHKAN INI =====
+        // 2. Update projectCount di Firestore
+        const user = firebase.auth().currentUser;
+        if (user) {
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+                projectCount: increment(1)
+            });
+            console.log('✅ projectCount diupdate ke Firestore!');
+        }
+        // ===== SAMPAI SINI =====
+
+        // 3. Proses RAB jika ada
+        if (pendingRabItems.length) {
+            try {
+                const rabPayload = pendingRabItems.map((it) => ({
+                    project_id: p.id,  // Gunakan p.id
+                    no_urut: it.urut + 1,
+                    uraian: it.uraian,
+                    volume: it.volume,
+                    satuan: it.satuan,
+                    harga_satuan: it.hargaSatuan,
+                    jumlah_harga: it.jumlahHarga
+                }));
+                const { data: rabData, error: rabError } = await sb.from('rab').insert(rabPayload);
+                if (rabError) throw rabError;
+                rablist.push(...rabData.map(mapRab));
+            } catch (rabErr) {
+                alert('Proyek berhasil dibuat, tapi RAB gagal diproses...');
+            }
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Gagal menyimpan proyek: ' + error.message);
     }
-    pendingRabItems = [];
-
-    closeProjectModal();
-    renderAll();
-  } catch(err){
-    alert('Gagal menyimpan proyek ke Supabase: ' + err.message);
-  }
-  return false;
 }
 
 async function deleteCurrentProject(){
